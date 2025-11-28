@@ -11,6 +11,10 @@
 #include "psa/service.h"
 #include "psa_manifest/tfm_dummy_partition.h"
 
+#include "stm32l5xx_hal_secure_sram.h"
+
+extern int tfm_platform_secure_sram(uint32_t base, uint32_t size);
+
 #define NUM_SECRETS 5
 
 struct dp_secret {
@@ -63,9 +67,42 @@ static psa_status_t tfm_dp_secret_digest(uint32_t secret_index,
 
 typedef psa_status_t (*dp_func_t)(psa_msg_t *);
 
+#define SRAM1_START  0x20000000
+#define SRAM1_END    0x20001000
+
+__always_inline void rtpox_sau_disable(void){
+    // Disable SAU
+    SAU->CTRL &= ~SAU_CTRL_ENABLE_Msk ;
+}
+
+__always_inline void rtpox_sau_enable(void){
+    // Enable SAU
+    SAU->CTRL |= SAU_CTRL_ENABLE_Msk ;
+}
+
+__always_inline void rtpox_configure_sau_nonsecure(uint32_t address_init, uint32_t address_end, uint32_t region_number){
+    SAU->RNR  = region_number;
+    SAU->RBAR = address_init & SAU_RBAR_BADDR_Msk;
+    SAU->RLAR = (address_end & SAU_RLAR_LADDR_Msk) & ~SAU_RLAR_ENABLE_Msk;
+    __DSB();
+    __ISB();
+}
+
+__always_inline void rtpox_configure_sau_secure(uint32_t address_init, uint32_t address_end, uint32_t region_number){
+    SAU->RNR  = region_number;
+    SAU->RBAR = address_init & SAU_RBAR_BADDR_Msk;
+    SAU->RLAR = (address_end & SAU_RLAR_LADDR_Msk) | SAU_RLAR_ENABLE_Msk;
+    __DSB();
+    __ISB();
+}
+
 static void psa_write_digest(void *handle, uint8_t *digest,
 			     uint32_t digest_size)
 {
+    rtpox_sau_disable();    
+	rtpox_configure_sau_secure(SRAM1_START, SRAM1_END, 6);
+    rtpox_sau_enable();   
+	digest[0] = 0x75;
 	psa_write((psa_handle_t)handle, 0, digest, digest_size);
 }
 
@@ -110,6 +147,8 @@ static void dp_signal_handle(psa_signal_t signal, dp_func_t pfn)
 		psa_panic();
 	}
 }
+
+
 
 psa_status_t tfm_dp_req_mngr_init(void)
 {

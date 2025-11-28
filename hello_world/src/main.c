@@ -96,6 +96,9 @@ void tfm_psa_crypto_rng(void)
  * requirements for entry code (like an app_main function) should specialize
  * this main.cc file in a target-specific subfolder.
  */
+
+uint32_t test_var = 0x12345678;
+uint32_t test_var2 = 0xabcdef00;
 int main(int argc, char *argv[])
 {
 	setup();
@@ -112,10 +115,20 @@ int main(int argc, char *argv[])
 	tfm_psa_crypto_rng();
 #endif
 
+	printk("Accessing secure SRAM...\n");
+
+	printk("Initial test_var at address: 0x%08x: 0x%x\n", (uint32_t)&test_var, test_var);
+
+	printk("Initial test_var2 at address: 0x%08x: 0x%x\n", (uint32_t)&test_var2, test_var2);
+
+	uint32_t sram_addr = SRAM1_BASE; // + GTZC_MPCBB_SUPERBLOCK_SIZE*12;
+	printk("Read from secure SRAM address 0x%x: 0x%08x\n", sram_addr, *((uint32_t*) sram_addr));
+	*((uint32_t*) sram_addr) = 0xABABABAB;
 
 	uint8_t digest[32];
 
-	for (int key = 0; key < 6; key++) {
+	//for (int key = 0; key < 6; key++) {
+		int key = 0;
 		psa_status_t status = dp_secret_digest(key, digest, sizeof(digest));
 
 		if (status == PSA_ERROR_INVALID_ARGUMENT && key == 5) {
@@ -129,7 +142,13 @@ int main(int argc, char *argv[])
 			}
 			printk("\n");
 		}
-	}
-	
+	//}
+
+	printk("Read again from secure SRAM address: 0x%08x\n", *((uint32_t*) sram_addr));
+
+	*((uint32_t*) sram_addr) = 0xCDCDCDCD;
+
+	printk("Read again from secure SRAM address: 0x%08x\n", *((uint32_t*) sram_addr));
+
 	return 0;
 }
