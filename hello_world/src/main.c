@@ -144,6 +144,17 @@ int main(int argc, char *argv[])
 		}
 	//}
 
+	volatile uint32_t *ptr = (volatile uint32_t *)SRAM1_BASE;
+
+	printk("Attempting write to %p\n", ptr);
+
+	*ptr = 0xDEADBEEF;
+
+	printk("Write finished\n");
+
+	printk("Reading: 0x%08x\n", *ptr);
+
+
 	printk("Read again from secure SRAM address: 0x%08x\n", *((uint32_t*) sram_addr));
 
 	*((uint32_t*) sram_addr) = 0xCDCDCDCD;

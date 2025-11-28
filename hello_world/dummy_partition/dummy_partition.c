@@ -68,7 +68,7 @@ static psa_status_t tfm_dp_secret_digest(uint32_t secret_index,
 typedef psa_status_t (*dp_func_t)(psa_msg_t *);
 
 #define SRAM1_START  0x20000000
-#define SRAM1_END    0x20001000
+#define SRAM1_END    0x20010000
 
 __always_inline void rtpox_sau_disable(void){
     // Disable SAU
