@@ -100,7 +100,7 @@ static void psa_write_digest(void *handle, uint8_t *digest,
 			     uint32_t digest_size)
 {
     rtpox_sau_disable();    
-	rtpox_configure_sau_secure(SRAM1_START, SRAM1_END, 6);
+	rtpox_configure_sau_nonsecure(SRAM1_START, SRAM1_END, 6);
     rtpox_sau_enable();   
 	digest[0] = 0x75;
 	psa_write((psa_handle_t)handle, 0, digest, digest_size);

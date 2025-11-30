@@ -99,6 +99,9 @@ void tfm_psa_crypto_rng(void)
 
 uint32_t test_var = 0x12345678;
 uint32_t test_var2 = 0xabcdef00;
+
+// allocate 64KB to flash
+static const uint8_t tmp[0x10000] = {0};
 int main(int argc, char *argv[])
 {
 	setup();
@@ -143,6 +146,8 @@ int main(int argc, char *argv[])
 			printk("\n");
 		}
 	//}
+
+	printk("read tmp at idx digest[0]: 0x%02x\n", tmp[digest[0]]);
 
 	volatile uint32_t *ptr = (volatile uint32_t *)SRAM1_BASE;
 
